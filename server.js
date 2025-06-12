@@ -7,7 +7,13 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://static-genius-pro.vercel.app', 'https://staticgeniuspro.vercel.app'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'https://static-genius-pro.vercel.app', 
+    'https://staticgeniuspro.vercel.app',
+    /.*\.vercel\.app$/  // Allow all Vercel subdomains
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -38,4 +44,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 API Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔑 REPLICATE_API_TOKEN present: ${!!process.env.REPLICATE_API_TOKEN}`);
+  console.log(`🔑 OPENAI_API_KEY present: ${!!process.env.OPENAI_API_KEY}`);
 }); 
