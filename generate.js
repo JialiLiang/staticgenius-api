@@ -100,8 +100,37 @@ async function handler(req, res) {
       
       for (const [index, imageData] of Object.entries(output)) {
         if (imageData && typeof imageData === 'object' && imageData.url) {
-          images.push(imageData.url);
-          console.log(`✅ Image ${index} extracted URL: ${imageData.url}`);
+          const urlValue = imageData.url;
+          // Check if url is a function that needs to be called
+          if (typeof urlValue === 'function') {
+            try {
+              const actualUrl = urlValue();
+              if (typeof actualUrl === 'string' && actualUrl.startsWith('http')) {
+                images.push(actualUrl);
+                console.log(`✅ Image ${index} extracted URL from function: ${actualUrl}`);
+              } else if (actualUrl && typeof actualUrl === 'object' && actualUrl.href) {
+                images.push(actualUrl.href);
+                console.log(`✅ Image ${index} extracted URL from function.href: ${actualUrl.href}`);
+              } else {
+                console.log(`⚠️ Image ${index} url function returned non-URL:`, typeof actualUrl, actualUrl);
+              }
+            } catch (urlError) {
+              console.log(`⚠️ Image ${index} error calling url function:`, urlError.message);
+            }
+          }
+          // Check if url is already a string
+          else if (typeof urlValue === 'string' && urlValue.startsWith('http')) {
+            images.push(urlValue);
+            console.log(`✅ Image ${index} extracted URL string: ${urlValue}`);
+          }
+          // Check if url is a URL object with href property
+          else if (urlValue && typeof urlValue === 'object' && urlValue.href) {
+            images.push(urlValue.href);
+            console.log(`✅ Image ${index} extracted URL from .href: ${urlValue.href}`);
+          }
+          else {
+            console.log(`⚠️ Image ${index} url property is not a string or function:`, typeof urlValue, urlValue);
+          }
         } else if (typeof imageData === 'string' && imageData.startsWith('http')) {
           images.push(imageData);
           console.log(`✅ Image ${index} is direct URL: ${imageData}`);
