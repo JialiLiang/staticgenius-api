@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+function handler(req, res) {
   console.log('Test API endpoint called');
   
   if (req.method === 'GET') {
@@ -11,4 +11,6 @@ export default function handler(req, res) {
   }
   
   return res.status(405).json({ error: 'Method not allowed' });
-} 
+}
+
+module.exports = handler; 

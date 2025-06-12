@@ -1,9 +1,9 @@
-import Replicate from 'replicate';
+const Replicate = require('replicate');
 
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   console.log('\n=== VERCEL GPT-IMAGE-1 DEBUG (JS VERSION) ===');
   console.log('Timestamp:', new Date().toISOString());
   console.log('Environment check:');
@@ -130,4 +130,6 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   }
-} 
+}
+
+module.exports = handler; 
