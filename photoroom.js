@@ -6,7 +6,7 @@ const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
 // Format specifications for different aspect ratios
 const FORMAT_SPECS = {
   '1.91:1': { width: 1200, height: 628 },
-  '4:5': { width: 1200, height: 900 }
+  '4:5': { width: 1200, height: 1500 }
 };
 
 async function handler(req, res) {
