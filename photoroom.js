@@ -80,6 +80,7 @@ async function handler(req, res) {
     const photoRoomData = {
       outputSize: `${formatSpec.width}x${formatSpec.height}`,
       referenceBox: 'originalImage',
+      removeBackground: 'false',
       'expand.mode': 'ai.auto'
     };
 
