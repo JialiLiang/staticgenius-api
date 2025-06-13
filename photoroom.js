@@ -80,9 +80,7 @@ async function handler(req, res) {
     const photoRoomData = {
       outputSize: `${formatSpec.width}x${formatSpec.height}`,
       referenceBox: 'originalImage',
-      removeBackground: 'false',
-      'expand.mode': 'ai.auto',
-      quality: 'high'
+      'expand.mode': 'ai.auto'
     };
 
     // Add text removal if enabled
@@ -113,7 +111,7 @@ async function handler(req, res) {
         
         const photoRoomResponse = await axios({
           method: 'POST',
-          url: 'https://sdk.photoroom.com/v1/segment',
+          url: 'https://image-api.photoroom.com/v2/edit',
           data: formData,
           headers: {
             'x-api-key': PHOTOROOM_API_KEY,
