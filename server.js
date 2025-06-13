@@ -20,13 +20,11 @@ app.use(express.json());
 
 // Import route handlers
 const generateHandler = require('./generate.js');
-const testHandler = require('./test.js');
-const helloHandler = require('./hello.js');
+const photoroomHandler = require('./photoroom.js');
 
 // Routes
 app.post('/api/generate', generateHandler);
-app.get('/api/test', testHandler);
-app.get('/api/hello', helloHandler);
+app.post('/api/photoroom', photoroomHandler);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -37,7 +35,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'StaticGenius API Server',
-    endpoints: ['/api/generate', '/api/test', '/api/hello', '/health']
+    endpoints: ['/api/generate', '/api/photoroom', '/health']
   });
 });
 
@@ -46,4 +44,5 @@ app.listen(PORT, () => {
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔑 REPLICATE_API_TOKEN present: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`🔑 OPENAI_API_KEY present: ${!!process.env.OPENAI_API_KEY}`);
+  console.log(`🔑 PHOTOROOM_API_KEY present: ${!!process.env.PHOTOROOM_API_KEY}`);
 }); 
