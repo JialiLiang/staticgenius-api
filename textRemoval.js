@@ -1,63 +1,72 @@
 const axios = require('axios');
 const FormData = require('form-data');
+const multer = require('multer');
 
 const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
+
+// Configure multer for handling file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+}).single('imageFile');
 
 async function handler(req, res) {
   console.log('\n🔤 === TEXT REMOVAL API HANDLER ===');
   console.log('📅 Request timestamp:', new Date().toISOString());
   console.log('🔍 Request method:', req.method);
-  console.log('📊 Request body keys:', Object.keys(req.body || {}));
 
   if (req.method !== 'POST') {
     console.log('❌ Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    if (!PHOTOROOM_API_KEY) {
-      console.error('❌ PHOTOROOM_API_KEY is not set');
-      return res.status(500).json({ 
-        error: 'PHOTOROOM_API_KEY is not configured',
-        timestamp: new Date().toISOString(),
-        env_check: 'failed'
+  // Handle file upload first
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error('❌ File upload error:', err.message);
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
+      if (!PHOTOROOM_API_KEY) {
+        console.error('❌ PHOTOROOM_API_KEY is not set');
+        return res.status(500).json({ 
+          error: 'PHOTOROOM_API_KEY is not configured',
+          timestamp: new Date().toISOString(),
+          env_check: 'failed'
+        });
+      }
+
+      if (!req.file) {
+        console.error('❌ No file uploaded');
+        return res.status(400).json({ error: 'No image file uploaded' });
+      }
+
+      const { textRemovalMode = 'ai.all' } = req.body;
+
+      console.log('✅ Request parameters:');
+      console.log('  - File name:', req.file.originalname);
+      console.log('  - File size:', Math.round(req.file.size / 1024) + 'KB');
+      console.log('  - File type:', req.file.mimetype);
+      console.log('  - Text Removal Mode:', textRemovalMode);
+
+      console.log('✅ Image file received successfully');
+
+      // Prepare FormData for PhotoRoom API
+      const formData = new FormData();
+      formData.append('imageFile', req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype
       });
-    }
-
-    const { imageUrl, textRemovalMode = 'ai.all' } = req.body;
-
-    if (!imageUrl) {
-      console.error('❌ Missing required parameter: imageUrl');
-      return res.status(400).json({ 
-        error: 'imageUrl is required' 
-      });
-    }
-
-    console.log('✅ Request parameters:');
-    console.log('  - Image URL:', imageUrl.substring(0, 100) + '...');
-    console.log('  - Text Removal Mode:', textRemovalMode);
-
-    // Download the image from URL
-    console.log('\n📥 Downloading image from URL...');
-    const imageResponse = await axios({
-      method: 'GET',
-      url: imageUrl,
-      responseType: 'stream'
-    });
-
-    if (imageResponse.status !== 200) {
-      console.error('❌ Failed to download image:', imageResponse.status);
-      return res.status(400).json({ error: 'Failed to download image from URL' });
-    }
-
-    console.log('✅ Image downloaded successfully');
-
-    // Prepare FormData for PhotoRoom API
-    const formData = new FormData();
-    formData.append('imageFile', imageResponse.data, {
-      filename: 'image.png',
-      contentType: 'image/png'
-    });
 
     // PhotoRoom API parameters for text removal
     const photoRoomData = {
@@ -127,24 +136,25 @@ async function handler(req, res) {
       }
     }
 
-    // All retries failed
-    console.error('❌ All PhotoRoom API retries failed');
-    throw lastError;
+      // All retries failed
+      console.error('❌ All PhotoRoom API retries failed');
+      throw lastError;
 
-  } catch (error) {
-    console.error('\n💥 === FATAL ERROR IN TEXT REMOVAL HANDLER ===');
-    console.error('Error type:', error.constructor?.name);
-    console.error('Error message:', error.message);
-    console.error('Error status:', error.response?.status);
-    console.error('Error response:', error.response?.data);
-    console.error('=== END FATAL ERROR ===\n');
+    } catch (error) {
+      console.error('\n💥 === FATAL ERROR IN TEXT REMOVAL HANDLER ===');
+      console.error('Error type:', error.constructor?.name);
+      console.error('Error message:', error.message);
+      console.error('Error status:', error.response?.status);
+      console.error('Error response:', error.response?.data);
+      console.error('=== END FATAL ERROR ===\n');
 
-    return res.status(500).json({
-      error: 'Text removal processing failed',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+      return res.status(500).json({
+        error: 'Text removal processing failed',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 }
 
 module.exports = handler; 
