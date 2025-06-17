@@ -21,10 +21,12 @@ app.use(express.json());
 // Import route handlers
 const generateHandler = require('./generate.js');
 const photoroomHandler = require('./photoroom.js');
+const textRemovalHandler = require('./textRemoval.js');
 
 // Routes
 app.post('/api/generate', generateHandler);
 app.post('/api/photoroom', photoroomHandler);
+app.post('/api/remove-text', textRemovalHandler);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -35,7 +37,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'StaticGenius API Server',
-    endpoints: ['/api/generate', '/api/photoroom', '/health']
+    endpoints: ['/api/generate', '/api/photoroom', '/api/remove-text', '/health']
   });
 });
 
