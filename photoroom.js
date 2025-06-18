@@ -6,7 +6,8 @@ const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
 // Format specifications for different aspect ratios
 const FORMAT_SPECS = {
   '1.91:1': { width: 1200, height: 628 },
-  '4:5': { width: 1200, height: 1500 }
+  '4:5': { width: 1200, height: 1500 },
+  '1:1': { width: 1200, height: 1200 }
 };
 
 async function handler(req, res) {
@@ -76,13 +77,18 @@ async function handler(req, res) {
       contentType: 'image/png'
     });
 
-    // PhotoRoom API parameters
+    // PhotoRoom API parameters - Special handling for 1:1 ratio
     const photoRoomData = {
       outputSize: `${formatSpec.width}x${formatSpec.height}`,
-      referenceBox: 'originalImage',
+      referenceBox: targetRatio === '1:1' ? 'center' : 'originalImage', // Use 'center' for 1:1 ratio
       removeBackground: 'false',
       'expand.mode': 'ai.auto'
     };
+    
+    // Additional parameter for square images to ensure proper expansion
+    if (targetRatio === '1:1') {
+      photoRoomData['positioning'] = 'center';
+    }
 
     // Add text removal if enabled
     if (removeText) {
@@ -149,7 +155,36 @@ async function handler(req, res) {
       } catch (error) {
         console.error(`❌ PhotoRoom API call attempt ${attempt} failed:`, error.message);
         console.error('Error status:', error.response?.status);
-        console.error('Error data:', error.response?.data?.toString());
+        console.error('Error headers:', error.response?.headers);
+        
+        // Enhanced error logging for PhotoRoom API response
+        if (error.response?.data) {
+          try {
+            const errorData = error.response.data.toString();
+            console.error('Raw error data:', errorData);
+            
+            // Try to parse as JSON if possible
+            try {
+              const jsonError = JSON.parse(errorData);
+              console.error('Parsed error JSON:', jsonError);
+            } catch (parseError) {
+              console.error('Error data is not JSON, raw data above');
+            }
+          } catch (dataError) {
+            console.error('Could not extract error data:', dataError);
+          }
+        }
+        
+        // Special handling for 1:1 ratio debugging
+        if (targetRatio === '1:1') {
+          console.error('\n🔍 === SPECIAL DEBUG FOR 1:1 RATIO ===');
+          console.error('Target ratio:', targetRatio);
+          console.error('Format spec:', formatSpec);
+          console.error('Output size:', `${formatSpec.width}x${formatSpec.height}`);
+          console.error('PhotoRoom parameters:', photoRoomData);
+          console.error('=== END 1:1 DEBUG ===\n');
+        }
+        
         lastError = error;
 
         if (attempt < maxRetries) {
