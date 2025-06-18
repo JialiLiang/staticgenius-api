@@ -1,5 +1,6 @@
 const axios = require('axios');
 const FormData = require('form-data');
+const sharp = require('sharp');
 
 const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
 
@@ -9,6 +10,68 @@ const FORMAT_SPECS = {
   '4:5': { width: 1200, height: 1500 },
   '1:1': { width: 1200, height: 1200 }
 };
+
+// Fallback function to crop image to 1:1 if PhotoRoom fails
+async function fallbackCropTo1x1(imageUrl, targetSize = 1200) {
+  console.log('\n🔄 === FALLBACK: CROPPING TO 1:1 ===');
+  console.log('📥 Downloading image for cropping...');
+  
+  try {
+    // Download the image
+    const imageResponse = await axios({
+      method: 'GET',
+      url: imageUrl,
+      responseType: 'arraybuffer'
+    });
+    
+    const imageBuffer = Buffer.from(imageResponse.data);
+    console.log('✅ Image downloaded for cropping');
+    
+    // Get image metadata to determine crop strategy
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log('📊 Original dimensions:', `${metadata.width}x${metadata.height}`);
+    
+    // Center crop to square
+    const size = Math.min(metadata.width, metadata.height);
+    const left = Math.floor((metadata.width - size) / 2);
+    const top = Math.floor((metadata.height - size) / 2);
+    
+    console.log('✂️ Cropping to center square:', `${size}x${size} at (${left}, ${top})`);
+    
+    // Crop and resize to target size
+    const croppedBuffer = await sharp(imageBuffer)
+      .extract({ left, top, width: size, height: size })
+      .resize(targetSize, targetSize, { 
+        fit: 'cover',
+        position: 'center'
+      })
+      .png()
+      .toBuffer();
+    
+    // Convert to base64
+    const base64Image = `data:image/png;base64,${croppedBuffer.toString('base64')}`;
+    
+    console.log('✅ Fallback cropping completed');
+    console.log(`📊 Final size: ${targetSize}x${targetSize}`);
+    console.log(`📊 Base64 size: ${Math.round(base64Image.length / 1024)}KB`);
+    
+    return {
+      success: true,
+      imageUrl: base64Image,
+      metadata: {
+        originalRatio: `${metadata.width}:${metadata.height}`,
+        targetRatio: '1:1',
+        dimensions: { width: targetSize, height: targetSize },
+        method: 'fallback_crop',
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Fallback cropping failed:', error.message);
+    throw error;
+  }
+}
 
 async function handler(req, res) {
   console.log('\n🎨 === PHOTOROOM API HANDLER ===');
@@ -195,8 +258,34 @@ async function handler(req, res) {
       }
     }
 
-    // All retries failed
+    // All retries failed - try fallback for 1:1 ratio
     console.error('❌ All PhotoRoom API retries failed');
+    
+    // Use fallback cropping for 1:1 ratio
+    if (targetRatio === '1:1') {
+      console.log('\n🔄 === ATTEMPTING 1:1 FALLBACK ===');
+      console.log('PhotoRoom failed, trying fallback center crop...');
+      
+      try {
+        const fallbackResult = await fallbackCropTo1x1(imageUrl, formatSpec.width);
+        console.log('✅ Fallback successful! Returning cropped image.');
+        
+        return res.json({
+          success: true,
+          imageUrl: fallbackResult.imageUrl,
+          metadata: {
+            ...fallbackResult.metadata,
+            fallbackReason: 'PhotoRoom AI expansion failed',
+            originalError: lastError.message
+          }
+        });
+        
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError.message);
+        // Continue to throw the original PhotoRoom error
+      }
+    }
+    
     throw lastError;
 
   } catch (error) {
