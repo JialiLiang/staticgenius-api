@@ -139,6 +139,11 @@ Requirements:
 
       console.log('🎨 Processing with Replicate GPT-Image-1...');
       console.log('🔧 Input parameters:', Object.keys(inputParams));
+      console.log('🔧 Sample from example - checking format compatibility:');
+      console.log('  - prompt:', inputParams.prompt.substring(0, 50) + '...');
+      console.log('  - input_images length:', inputParams.input_images.length);
+      console.log('  - aspect_ratio:', inputParams.aspect_ratio);
+      console.log('  - openai_api_key present:', !!inputParams.openai_api_key);
 
       try {
         const output = await replicate.run(
@@ -150,17 +155,26 @@ Requirements:
         console.log('📊 Output type:', typeof output);
         console.log('📊 Output:', Array.isArray(output) ? `Array with ${output.length} items` : output);
 
-        // Handle the output - it might be an array or a single URL
+        // Handle the output based on official Replicate example
         let translatedImageUrl;
         if (Array.isArray(output) && output.length > 0) {
-          translatedImageUrl = output[0];
+          // Check if output[0] has a url() method (as shown in Replicate example)
+          if (output[0] && typeof output[0].url === 'function') {
+            translatedImageUrl = output[0].url();
+          } else if (typeof output[0] === 'string') {
+            translatedImageUrl = output[0];
+          } else {
+            console.log('📊 Output[0] structure:', output[0]);
+            translatedImageUrl = output[0]; // Fallback
+          }
         } else if (typeof output === 'string') {
           translatedImageUrl = output;
         } else {
+          console.log('📊 Unexpected output structure:', output);
           throw new Error('Unexpected output format from Replicate');
         }
 
-        console.log('🖼️ Generated image URL:', translatedImageUrl.substring(0, 100) + '...');
+        console.log('🖼️ Generated image URL:', translatedImageUrl ? translatedImageUrl.substring(0, 100) + '...' : 'No URL found');
 
         // Return the translated image
         res.json({
