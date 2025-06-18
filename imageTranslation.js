@@ -158,13 +158,39 @@ Requirements:
         // Handle the output based on official Replicate example
         let translatedImageUrl;
         if (Array.isArray(output) && output.length > 0) {
+          console.log('📊 Output[0] type:', typeof output[0]);
+          console.log('📊 Output[0] structure:', JSON.stringify(output[0], null, 2));
+          
           // Check if output[0] has a url() method (as shown in Replicate example)
           if (output[0] && typeof output[0].url === 'function') {
             translatedImageUrl = output[0].url();
+            console.log('📊 URL from .url() method:', typeof translatedImageUrl, translatedImageUrl);
           } else if (typeof output[0] === 'string') {
             translatedImageUrl = output[0];
-          } else {
-            console.log('📊 Output[0] structure:', output[0]);
+            console.log('📊 Direct string URL:', translatedImageUrl);
+          } else if (output[0] && typeof output[0] === 'object') {
+            // Sometimes the output might be an object with URL property
+            if (output[0].url && typeof output[0].url === 'string') {
+              translatedImageUrl = output[0].url;
+              console.log('📊 URL from .url property:', translatedImageUrl);
+            } else if (output[0].href && typeof output[0].href === 'string') {
+              translatedImageUrl = output[0].href;
+              console.log('📊 URL from .href property:', translatedImageUrl);
+            } else {
+              console.log('📊 Unknown object structure, using first property that looks like a URL');
+              // Try to find any property that looks like a URL
+              for (const [key, value] of Object.entries(output[0])) {
+                if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('data:'))) {
+                  translatedImageUrl = value;
+                  console.log(`📊 Found URL in property ${key}:`, translatedImageUrl);
+                  break;
+                }
+              }
+            }
+          }
+          
+          if (!translatedImageUrl) {
+            console.log('📊 Could not extract URL from output[0], using fallback');
             translatedImageUrl = output[0]; // Fallback
           }
         } else if (typeof output === 'string') {
@@ -174,12 +200,15 @@ Requirements:
           throw new Error('Unexpected output format from Replicate');
         }
 
-        console.log('🖼️ Generated image URL:', translatedImageUrl ? translatedImageUrl.substring(0, 100) + '...' : 'No URL found');
+        // Ensure translatedImageUrl is a string before using string methods
+        const urlString = typeof translatedImageUrl === 'string' ? translatedImageUrl : String(translatedImageUrl);
+        console.log('🖼️ Final image URL type:', typeof urlString);
+        console.log('🖼️ Generated image URL:', urlString.length > 100 ? urlString.substring(0, 100) + '...' : urlString);
 
         // Return the translated image
         res.json({
           success: true,
-          imageUrl: translatedImageUrl,
+          imageUrl: urlString,
           language: targetLanguage,
           metadata: {
             originalFileName: imageFile.originalname,
