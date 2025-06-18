@@ -176,19 +176,27 @@ async function handler(req, res) {
     let lastError;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      let requestHeaders;
       try {
         console.log(`\n🚀 PhotoRoom API call attempt ${attempt}/${maxRetries}...`);
+        
+        // Get headers from FormData (includes proper Content-Type with boundary)
+        const formHeaders = formData.getHeaders();
+        requestHeaders = {
+          'x-api-key': PHOTOROOM_API_KEY,
+          ...formHeaders
+        };
+        
+        console.log('📋 Request headers:', Object.keys(requestHeaders));
+        console.log('📋 Content-Type:', requestHeaders['content-type']);
         
         const photoRoomResponse = await axios({
           method: 'POST',
           url: 'https://image-api.photoroom.com/v2/edit',
           data: formData,
-          headers: {
-            'x-api-key': PHOTOROOM_API_KEY,
-            ...formData.getHeaders()
-          },
+          headers: requestHeaders,
           responseType: 'arraybuffer',
-          timeout: 30000 // 30 second timeout
+          timeout: 45000 // Increased timeout for 1:1 processing
         });
 
         console.log('✅ PhotoRoom API call successful!');
@@ -245,7 +253,14 @@ async function handler(req, res) {
           console.error('Format spec:', formatSpec);
           console.error('Output size:', `${formatSpec.width}x${formatSpec.height}`);
           console.error('PhotoRoom parameters:', photoRoomData);
+          console.error('Request headers sent:', Object.keys(requestHeaders || {}));
           console.error('=== END 1:1 DEBUG ===\n');
+        }
+        
+        // Check if this is a Content-Type related error (from PhotoRoom docs)
+        if (error.response?.status === 500 && error.message.includes('socket hang up')) {
+          console.error('⚠️  Detected potential Content-Type header issue (PhotoRoom 500 error pattern)');
+          console.error('💡 This may be related to multipart/form-data header conflicts');
         }
         
         lastError = error;
