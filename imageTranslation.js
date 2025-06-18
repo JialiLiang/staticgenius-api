@@ -124,7 +124,7 @@ Requirements:
       console.log(`📝 Prompt length: ${prompt.length} characters`);
 
       // Process with Replicate - correct format for openai/gpt-image-1
-      const input = {
+      const inputParams = {
         prompt: prompt,
         input_images: [imageDataUrl],
         aspect_ratio: finalAspectRatio,
@@ -133,17 +133,17 @@ Requirements:
         background: "auto",
         moderation: "auto",
         number_of_images: 1,
-        output_format: "webp",
+        output_format: "png",
         output_compression: 90
       };
 
       console.log('🎨 Processing with Replicate GPT-Image-1...');
-      console.log('🔧 Input parameters:', Object.keys(input));
+      console.log('🔧 Input parameters:', Object.keys(inputParams));
 
       try {
         const output = await replicate.run(
           "openai/gpt-image-1",  // Replicate model that uses OpenAI's GPT-4 Vision
-          input
+          { input: inputParams }
         );
 
         console.log('✅ Replicate processing completed');
