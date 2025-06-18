@@ -10,9 +10,12 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
     'https://static-genius-pro.vercel.app', 
     'https://staticgeniuspro.vercel.app',
-    /.*\.vercel\.app$/  // Allow all Vercel subdomains
+    /.*\.vercel\.app$/,  // Allow all Vercel subdomains
+    /^http:\/\/localhost:\d+$/  // Allow any localhost port for development
   ],
   credentials: true
 }));
