@@ -118,7 +118,9 @@ Requirements:
 - Translate text naturally — fluent and culturally appropriate for ${languageName}
 - Keep layout, design, and image quality the same
 - Adapt composition for ${finalAspectRatio} aspect ratio (${formatDescriptions[finalAspectRatio] || formatDescriptions['1:1']})
-- Return a professional image that looks native to ${languageName} users`;
+- - Adapt visuals to feel native to the local audience:
+  • Use people, settings, and objects that reflect ${languageName} culture  
+  • For example, adjust ethnicity, fashion, or local symbols (e.g. flowers, buildings)`;
 
       console.log(`🎯 Processing image for ${languageName} with aspect ratio ${finalAspectRatio}`);
       console.log(`📝 Prompt length: ${prompt.length} characters`);
