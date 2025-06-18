@@ -53,7 +53,7 @@ const translateImage = async (req, res) => {
         });
       }
 
-      const { targetLanguage } = req.body;
+      const { targetLanguage, aspectRatio } = req.body;
       const imageFile = req.file;
 
       if (!imageFile) {
@@ -91,7 +91,8 @@ const translateImage = async (req, res) => {
         fileName: imageFile.originalname,
         fileSize: imageFile.size,
         mimeType: imageFile.mimetype,
-        targetLanguage: targetLanguage
+        targetLanguage: targetLanguage,
+        aspectRatio: aspectRatio || '1:1'
       });
 
       // Convert image to base64
@@ -101,31 +102,43 @@ const translateImage = async (req, res) => {
       // Get language name for prompt
       const languageName = LANGUAGE_PROMPTS[targetLanguage] || targetLanguage;
 
-      // Create translation prompt
-      const prompt = `Adapt this image for ${languageName} audience in a square (1:1) format.
+      // Use provided aspect ratio or default to 1:1
+      const finalAspectRatio = aspectRatio || '1:1';
+      
+      // Create translation prompt with dynamic aspect ratio
+      const formatDescriptions = {
+        '1:1': 'square format ideal for social media and balanced compositions',
+        '2:3': 'portrait format ideal for mobile displays and vertical layouts', 
+        '3:2': 'landscape format ideal for desktop displays and horizontal layouts'
+      };
 
-Key requirements:
-- Create a square (1:1) composition that will work well for Google Ads
-- Translate text naturally and creatively to ${languageName}, culturally native to the target audience
-- Ensure the composition is balanced and centered for optimal expansion to other formats
-- Maintain the visual design and layout
-- Ensure cultural appropriateness for ${languageName} speakers
-- Keep the same image style and quality
-- Generate a new image with the translated text
+      const prompt = `Translate and adapt this image for a ${languageName}-speaking audience in ${finalAspectRatio} format.
 
-Important: Return a high-quality image that looks professional and native to ${languageName} speakers. The translation should feel natural, not literal.`;
+Requirements:
+- Translate text naturally — fluent and culturally appropriate for ${languageName}
+- Keep layout, design, and image quality the same
+- Adapt composition for ${finalAspectRatio} aspect ratio (${formatDescriptions[finalAspectRatio] || formatDescriptions['1:1']})
+- Return a professional image that looks native to ${languageName} users`;
 
-      console.log(`🎯 Processing image for ${languageName} with aspect ratio 1:1`);
+      console.log(`🎯 Processing image for ${languageName} with aspect ratio ${finalAspectRatio}`);
       console.log(`📝 Prompt length: ${prompt.length} characters`);
 
-      // Process with Replicate
+      // Process with Replicate - correct format for openai/gpt-image-1
       const input = {
         prompt: prompt,
         input_images: [imageDataUrl],
-        openai_api_key: process.env.OPENAI_API_KEY  // OpenAI API key passed to Replicate
+        aspect_ratio: finalAspectRatio,
+        openai_api_key: process.env.OPENAI_API_KEY,  // OpenAI API key passed to Replicate
+        quality: "auto",
+        background: "auto",
+        moderation: "auto",
+        number_of_images: 1,
+        output_format: "webp",
+        output_compression: 90
       };
 
       console.log('🎨 Processing with Replicate GPT-Image-1...');
+      console.log('🔧 Input parameters:', Object.keys(input));
 
       try {
         const output = await replicate.run(
