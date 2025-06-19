@@ -28,7 +28,7 @@ const textRemovalHandler = require('./textRemoval.js');
 const imageTranslationHandler = require('./imageTranslation.js');
 
 // Routes
-app.post('/api/generate', generateHandler);
+app.all('/api/generate', generateHandler);  // Support both GET and POST
 app.post('/api/photoroom', photoroomHandler);
 app.post('/api/remove-text', textRemovalHandler);
 app.post('/api/translate', imageTranslationHandler);
