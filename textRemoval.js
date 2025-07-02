@@ -114,6 +114,7 @@ async function handler(req, res) {
         } catch (error) {
           console.error(`❌ PhotoRoom API call attempt ${attempt} failed:`, error.message);
           console.error('Error status:', error.response?.status);
+          console.error('Error data:', error.response?.data);
           lastError = error;
 
           if (attempt < maxRetries) {
@@ -130,9 +131,16 @@ async function handler(req, res) {
 
     } catch (error) {
       console.error('Text removal error:', error.message);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response data:', error.response?.data);
+      
+      // Return detailed error for debugging
       return res.status(500).json({
         error: 'Text removal processing failed',
-        message: error.message
+        message: error.message,
+        photoRoomStatus: error.response?.status,
+        photoRoomError: error.response?.data,
+        debug: true
       });
     }
   });
