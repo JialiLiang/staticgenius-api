@@ -1,4 +1,5 @@
 const axios = require('axios');
+const FormData = require('form-data');
 const multer = require('multer');
 
 const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
@@ -39,21 +40,24 @@ async function handler(req, res) {
 
       const { textRemovalMode = 'ai.all' } = req.body;
 
-      // Convert uploaded file to base64 data URL
-      const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      // Prepare form data for PhotoRoom API
+      const formData = new FormData();
+      formData.append('imageFile', req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype
+      });
+      formData.append('removeBackground', 'false');
+      formData.append('referenceBox', 'originalImage');
+      formData.append('textRemoval.mode', textRemovalMode);
 
-      // Call PhotoRoom API using query parameters as per their documentation
+      // Call PhotoRoom API with POST and form data
       const photoRoomResponse = await axios({
-        method: 'GET',
+        method: 'POST',
         url: 'https://image-api.photoroom.com/v2/edit',
-        params: {
-          removeBackground: 'false',
-          referenceBox: 'originalImage',
-          'textRemoval.mode': textRemovalMode,
-          imageUrl: base64Image
-        },
+        data: formData,
         headers: {
-          'x-api-key': PHOTOROOM_API_KEY
+          'x-api-key': PHOTOROOM_API_KEY,
+          ...formData.getHeaders()
         },
         responseType: 'arraybuffer',
         timeout: 30000
