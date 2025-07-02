@@ -137,19 +137,8 @@ const gptResize = async (req, res) => {
       const base64Image = compressedBuffer.toString('base64');
       const imageDataUrl = `data:${imageFile.mimetype};base64,${base64Image}`;
 
-      // Create a specialized prompt for intelligent resizing to 3:2 landscape
-      const resizePrompt = `Transform this image to a 3:2 landscape format while intelligently preserving all important elements:
-
-CRITICAL REQUIREMENTS:
-- Keep ALL text, logos, and important visual elements visible and readable
-- Maintain the main subject's proportions and positioning
-- If the original is square/vertical, expand the scene naturally on the sides
-- Add contextually appropriate background that matches the original style
-- Preserve image quality and visual clarity
-- Do not crop out any essential elements
-- Make the expansion look natural and seamless
-
-OUTPUT: High-quality 3:2 landscape image with all original elements intact`;
+      // Create a simple prompt for resizing to 3:2 landscape
+      const resizePrompt = `Resize this image to 3:2 landscape format. Keep all elements visible and readable.`;
 
               console.log('🎯 Processing image for intelligent 3:2 resize...');
         console.log('📝 Using specialized resize prompt');
