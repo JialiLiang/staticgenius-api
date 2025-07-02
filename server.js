@@ -30,6 +30,7 @@ const generateHandler = require('./generate.js');
 const photoroomHandler = require('./photoroom.js');
 const textRemovalHandler = require('./textRemoval.js');
 const imageTranslationHandler = require('./imageTranslation.js');
+const debugTextHandler = require('./debugText.js');
 
 // Routes
 app.all('/api/generate', generateHandler);  // Support both GET and POST
