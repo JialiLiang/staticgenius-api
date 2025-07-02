@@ -92,18 +92,31 @@ const gptResize = async (req, res) => {
     upload(req, res, async (err) => {
       if (err) {
         console.error('❌ File upload error:', err);
+        console.error('❌ Error type:', err.code);
+        console.error('❌ Error details:', err);
         return res.status(400).json({
           success: false,
-          error: 'File upload failed: ' + err.message
+          error: 'File upload failed: ' + err.message,
+          errorCode: err.code,
+          errorType: 'MULTER_ERROR'
         });
       }
 
       const imageFile = req.file;
 
       if (!imageFile) {
+        console.error('❌ No image file received');
+        console.error('❌ Request headers:', req.headers);
+        console.error('❌ Request body keys:', Object.keys(req.body || {}));
         return res.status(400).json({
           success: false,
-          error: 'No image file provided'
+          error: 'No image file provided',
+          errorType: 'MISSING_FILE',
+          received: {
+            headers: req.headers['content-type'],
+            bodyKeys: Object.keys(req.body || {}),
+            hasFile: !!req.file
+          }
         });
       }
 
@@ -131,7 +144,17 @@ const gptResize = async (req, res) => {
       });
 
       // Compress image if needed
-      const compressedBuffer = await compressImageForGPT(imageFile.buffer);
+      let compressedBuffer;
+      try {
+        compressedBuffer = await compressImageForGPT(imageFile.buffer);
+      } catch (compressionError) {
+        console.error('❌ Image compression failed:', compressionError);
+        return res.status(400).json({
+          success: false,
+          error: 'Image processing failed: ' + compressionError.message,
+          errorType: 'COMPRESSION_ERROR'
+        });
+      }
 
       // Convert compressed image to base64
       const base64Image = compressedBuffer.toString('base64');
