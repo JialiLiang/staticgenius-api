@@ -76,31 +76,32 @@ async function compressImageForGPT(imageBuffer) {
   }
 }
 
-// Configure multer for file uploads
+// Configure multer for file uploads (matching textRemoval.js configuration)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 15 * 1024 * 1024, // Increased to 15MB to allow for large inputs before compression
+    fileSize: 50 * 1024 * 1024, // 50MB limit to match textRemoval.js
   },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
 }).single('imageFile');
 
 const gptResize = async (req, res) => {
   console.log('\n🎨 === GPT-1 RESIZE REQUEST ===');
   
-  try {
-    // Handle file upload
-    upload(req, res, async (err) => {
-      if (err) {
-        console.error('❌ File upload error:', err);
-        console.error('❌ Error type:', err.code);
-        console.error('❌ Error details:', err);
-        return res.status(400).json({
-          success: false,
-          error: 'File upload failed: ' + err.message,
-          errorCode: err.code,
-          errorType: 'MULTER_ERROR'
-        });
-      }
+  // Handle file upload first (matching textRemoval.js structure)
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error('❌ File upload error:', err.message);
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
 
       const imageFile = req.file;
 
@@ -267,15 +268,19 @@ const gptResize = async (req, res) => {
         throw new Error(`Replicate API error: ${String(replicateError)}`);
       }
 
-    });
+    } catch (error) {
+      console.error('\n💥 === FATAL ERROR IN GPT RESIZE HANDLER ===');
+      console.error('Error type:', error.constructor?.name);
+      console.error('Error message:', error.message);
+      console.error('=== END FATAL ERROR ===\n');
 
-  } catch (error) {
-    console.error('❌ GPT resize error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'GPT resize failed: ' + error.message
-    });
-  }
+      return res.status(500).json({
+        success: false,
+        error: 'GPT resize failed: ' + error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 };
 
 module.exports = gptResize; 

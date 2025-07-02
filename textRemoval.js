@@ -23,6 +23,10 @@ async function handler(req, res) {
   console.log('\n🔤 === TEXT REMOVAL API HANDLER ===');
   console.log('📅 Request timestamp:', new Date().toISOString());
   console.log('🔍 Request method:', req.method);
+  console.log('🔍 Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('🔍 Request URL:', req.url);
+  console.log('🔍 Content-Type:', req.headers['content-type']);
+  console.log('🔍 Content-Length:', req.headers['content-length']);
 
   if (req.method !== 'POST') {
     console.log('❌ Method not allowed:', req.method);
@@ -33,10 +37,38 @@ async function handler(req, res) {
   upload(req, res, async (err) => {
     if (err) {
       console.error('❌ File upload error:', err.message);
-      return res.status(400).json({ error: err.message });
+      console.error('❌ Error type:', err.constructor?.name);
+      console.error('❌ Error code:', err.code);
+      console.error('❌ Error field:', err.field);
+      console.error('❌ Full error:', err);
+      return res.status(400).json({ 
+        error: err.message,
+        errorType: err.constructor?.name,
+        errorCode: err.code,
+        errorField: err.field
+      });
+    }
+
+    console.log('✅ Multer upload completed without errors');
+    console.log('📊 Request body keys:', Object.keys(req.body || {}));
+    console.log('📊 Request body values:', req.body);
+    console.log('📊 Request file present:', !!req.file);
+    if (req.file) {
+      console.log('📊 File details:', {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        encoding: req.file.encoding,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
     }
 
     try {
+      console.log('🔑 Environment check:');
+      console.log('  - PHOTOROOM_API_KEY present:', !!PHOTOROOM_API_KEY);
+      console.log('  - PHOTOROOM_API_KEY length:', PHOTOROOM_API_KEY ? PHOTOROOM_API_KEY.length : 0);
+      console.log('  - PHOTOROOM_API_KEY preview:', PHOTOROOM_API_KEY ? PHOTOROOM_API_KEY.substring(0, 10) + '...' : 'NOT SET');
+
       if (!PHOTOROOM_API_KEY) {
         console.error('❌ PHOTOROOM_API_KEY is not set');
         return res.status(500).json({ 
@@ -48,7 +80,19 @@ async function handler(req, res) {
 
       if (!req.file) {
         console.error('❌ No file uploaded');
-        return res.status(400).json({ error: 'No image file uploaded' });
+        console.error('📊 Debug info:');
+        console.error('  - req.file:', req.file);
+        console.error('  - req.files:', req.files);
+        console.error('  - req.body:', req.body);
+        console.error('  - multer field name expected: imageFile');
+        return res.status(400).json({ 
+          error: 'No image file uploaded',
+          received: {
+            body: req.body,
+            filePresent: !!req.file,
+            filesPresent: !!req.files
+          }
+        });
       }
 
       const { textRemovalMode = 'ai.all' } = req.body;
