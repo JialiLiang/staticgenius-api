@@ -8,10 +8,11 @@ const replicate = new Replicate({
 });
 
 // Maximum dimensions for input images (to prevent issues and reduce costs)
+// GPT-1 generally works better with smaller, more manageable image sizes
 const MAX_INPUT_DIMENSIONS = {
-  width: 2048,
-  height: 2048,
-  maxFileSize: 10 * 1024 * 1024 // 10MB max
+  width: 3000,   // Reasonable limit for GPT processing
+  height: 3000,  // Reasonable limit for GPT processing
+  maxFileSize: 15 * 1024 * 1024 // 15MB max
 };
 
 // Compress and resize image if it's too large
@@ -55,8 +56,8 @@ async function compressImageForGPT(imageBuffer) {
           withoutEnlargement: true
         })
         .png({ 
-          quality: 90,
-          compressionLevel: 6 
+          quality: 80,        // More aggressive compression
+          compressionLevel: 9 // Maximum PNG compression
         })
         .toBuffer();
       
