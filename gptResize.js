@@ -92,7 +92,7 @@ const upload = multer({
 }).single('imageFile');
 
 const gptResize = async (req, res) => {
-  console.log('\n🎨 === GPT-1 RESIZE REQUEST ===');
+  console.log('\n🎨 === GPT-1 RESIZE REQUEST (Fixed multer config) ===');
   
   // Handle file upload first (matching textRemoval.js structure)
   upload(req, res, async (err) => {
