@@ -92,7 +92,8 @@ const translateImage = async (req, res) => {
         fileSize: imageFile.size,
         mimeType: imageFile.mimetype,
         targetLanguage: targetLanguage,
-        aspectRatio: aspectRatio || '1:1'
+        aspectRatio: aspectRatio || '1:1',
+        hasCustomPrompt: !!req.body.customPrompt
       });
 
       // Convert image to base64
@@ -112,18 +113,29 @@ const translateImage = async (req, res) => {
         '3:2': 'landscape format ideal for desktop displays and horizontal layouts'
       };
 
-      const prompt = `Translate and adapt this image for a ${languageName}-speaking audience in ${finalAspectRatio} format.
+      // Use custom prompt if provided, otherwise use default
+      const customPrompt = req.body.customPrompt;
+      
+      console.log('🎯 PROMPT DEBUG:');
+      console.log('  - customPrompt received:', !!customPrompt);
+      console.log('  - customPrompt length:', customPrompt ? customPrompt.length : 0);
+      console.log('  - customPrompt preview:', customPrompt ? customPrompt.substring(0, 150) + '...' : 'none');
+      
+      const prompt = customPrompt || `Translate and adapt this image for a ${languageName}-speaking audience in ${finalAspectRatio} format.
 
 Requirements:
 - Translate text naturally — fluent and culturally appropriate for ${languageName}
 - Keep layout, design, and image quality the same
+- Do not change too much the main subject
 - Adapt composition for ${finalAspectRatio} aspect ratio (${formatDescriptions[finalAspectRatio] || formatDescriptions['1:1']})
-- - Adapt visuals to feel native to the local audience:
+- Adapt visuals to feel native to the local audience:
   • Use people, settings, and objects that reflect ${languageName} culture  
   • For example, adjust ethnicity, fashion, or local symbols (e.g. flowers, buildings)`;
 
       console.log(`🎯 Processing image for ${languageName} with aspect ratio ${finalAspectRatio}`);
-      console.log(`📝 Prompt length: ${prompt.length} characters`);
+      console.log(`📝 Using ${customPrompt ? 'CUSTOM' : 'DEFAULT'} prompt`);
+      console.log(`📝 Final prompt length: ${prompt.length} characters`);
+      console.log(`📝 Final prompt preview: ${prompt.substring(0, 150)}...`);
 
       // Process with Replicate - correct format for openai/gpt-image-1
       const inputParams = {

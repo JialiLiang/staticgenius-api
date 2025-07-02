@@ -6,10 +6,78 @@ const PHOTOROOM_API_KEY = process.env.PHOTOROOM_API_KEY;
 
 // Format specifications for different aspect ratios
 const FORMAT_SPECS = {
-  '1.91:1': { width: 1200, height: 628 },
+  '1.91:1': { width: 2400, height: 1256 },
   '4:5': { width: 1200, height: 1500 },
   '1:1': { width: 1200, height: 1200 }
 };
+
+// Maximum dimensions for input images to PhotoRoom (to prevent 413 errors)
+const MAX_INPUT_DIMENSIONS = {
+  width: 2048,
+  height: 2048,
+  maxFileSize: 10 * 1024 * 1024 // 10MB max
+};
+
+// Compress and resize image if it's too large
+async function compressImageForPhotoRoom(imageBuffer) {
+  console.log('\n🔄 === COMPRESSING IMAGE FOR PHOTOROOM ===');
+  
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log('📊 Original image:', `${metadata.width}x${metadata.height}`, `${Math.round(imageBuffer.length / 1024)}KB`);
+    
+    let needsCompression = false;
+    let targetWidth = metadata.width;
+    let targetHeight = metadata.height;
+    
+    // Check if image is too large
+    if (metadata.width > MAX_INPUT_DIMENSIONS.width || 
+        metadata.height > MAX_INPUT_DIMENSIONS.height ||
+        imageBuffer.length > MAX_INPUT_DIMENSIONS.maxFileSize) {
+      needsCompression = true;
+      
+      // Calculate new dimensions while maintaining aspect ratio
+      const aspectRatio = metadata.width / metadata.height;
+      
+      if (metadata.width > metadata.height) {
+        // Landscape - limit by width
+        targetWidth = Math.min(metadata.width, MAX_INPUT_DIMENSIONS.width);
+        targetHeight = Math.round(targetWidth / aspectRatio);
+      } else {
+        // Portrait or square - limit by height
+        targetHeight = Math.min(metadata.height, MAX_INPUT_DIMENSIONS.height);
+        targetWidth = Math.round(targetHeight * aspectRatio);
+      }
+      
+      console.log('⚠️ Image too large, compressing to:', `${targetWidth}x${targetHeight}`);
+    }
+    
+    if (needsCompression) {
+      const compressedBuffer = await sharp(imageBuffer)
+        .resize(targetWidth, targetHeight, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .png({ 
+          quality: 90,
+          compressionLevel: 6 
+        })
+        .toBuffer();
+      
+      console.log('✅ Image compressed:', `${targetWidth}x${targetHeight}`, `${Math.round(compressedBuffer.length / 1024)}KB`);
+      console.log('📉 Size reduction:', `${Math.round((1 - compressedBuffer.length / imageBuffer.length) * 100)}%`);
+      
+      return compressedBuffer;
+    } else {
+      console.log('✅ Image size OK, no compression needed');
+      return imageBuffer;
+    }
+    
+  } catch (error) {
+    console.error('❌ Image compression failed:', error.message);
+    throw error;
+  }
+}
 
 // Fallback function to crop image to 1:1 if PhotoRoom fails
 async function fallbackCropTo1x1(imageUrl, targetSize = 1200) {
@@ -123,7 +191,7 @@ async function handler(req, res) {
     const imageResponse = await axios({
       method: 'GET',
       url: imageUrl,
-      responseType: 'stream'
+      responseType: 'arraybuffer'
     });
 
     if (imageResponse.status !== 200) {
@@ -133,9 +201,13 @@ async function handler(req, res) {
 
     console.log('✅ Image downloaded successfully');
 
+    // Convert to buffer and compress if needed
+    const originalBuffer = Buffer.from(imageResponse.data);
+    const compressedBuffer = await compressImageForPhotoRoom(originalBuffer);
+
     // Prepare FormData for PhotoRoom API
     const formData = new FormData();
-    formData.append('imageFile', imageResponse.data, {
+    formData.append('imageFile', compressedBuffer, {
       filename: 'image.png',
       contentType: 'image/png'
     });

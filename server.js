@@ -32,6 +32,7 @@ app.all('/api/generate', generateHandler);  // Support both GET and POST
 app.post('/api/photoroom', photoroomHandler);
 app.post('/api/remove-text', textRemovalHandler);
 app.post('/api/translate', imageTranslationHandler);
+app.post('/api/gpt-resize', require('./gptResize.js')); // New GPT-4 Vision resize endpoint
 
 // Health check
 app.get('/health', (req, res) => {
@@ -42,7 +43,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'StaticGenius API Server',
-    endpoints: ['/api/generate', '/api/photoroom', '/api/remove-text', '/api/translate', '/health']
+    endpoints: ['/api/generate', '/api/photoroom', '/api/remove-text', '/api/translate', '/api/gpt-resize', '/health']
   });
 });
 
