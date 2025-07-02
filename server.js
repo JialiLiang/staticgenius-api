@@ -57,4 +57,5 @@ app.listen(PORT, () => {
   console.log(`🔑 REPLICATE_API_TOKEN present: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`🔑 OPENAI_API_KEY present: ${!!process.env.OPENAI_API_KEY}`);
   console.log(`🔑 PHOTOROOM_API_KEY present: ${!!process.env.PHOTOROOM_API_KEY}`);
+  console.log(`🎯 GPT-1 resize endpoint available at /api/gpt-resize`);
 }); 
