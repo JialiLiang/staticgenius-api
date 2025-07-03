@@ -1,6 +1,7 @@
 const multer = require('multer');
 const Replicate = require('replicate');
 const sharp = require('sharp');
+const axios = require('axios');
 
 // Configure Replicate
 const replicate = new Replicate({
@@ -20,6 +21,11 @@ async function compressImageForGPT(imageBuffer) {
   console.log('\n🔄 === COMPRESSING IMAGE FOR GPT-1 ===');
   
   try {
+    // Validate the input buffer
+    if (!imageBuffer || imageBuffer.length === 0) {
+      throw new Error('Invalid image buffer provided');
+    }
+
     const metadata = await sharp(imageBuffer).metadata();
     console.log('📊 Original image:', `${metadata.width}x${metadata.height}`, `${Math.round(imageBuffer.length / 1024)}KB`);
     
@@ -64,6 +70,11 @@ async function compressImageForGPT(imageBuffer) {
       console.log('✅ Image compressed:', `${targetWidth}x${targetHeight}`, `${Math.round(compressedBuffer.length / 1024)}KB`);
       console.log('📉 Size reduction:', `${Math.round((1 - compressedBuffer.length / imageBuffer.length) * 100)}%`);
       
+      // Validate compressed buffer
+      if (!compressedBuffer || compressedBuffer.length === 0) {
+        throw new Error('Image compression resulted in empty buffer');
+      }
+      
       return compressedBuffer;
     } else {
       console.log('✅ Image size OK, no compression needed');
@@ -76,13 +87,22 @@ async function compressImageForGPT(imageBuffer) {
   }
 }
 
-// Configure multer for file uploads (matching textRemoval.js configuration)
+// Configure multer for file uploads with better error handling
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit to match textRemoval.js
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fieldSize: 50 * 1024 * 1024, // 50MB field size limit
+    files: 1 // Only allow 1 file
   },
   fileFilter: (req, file, cb) => {
+    console.log('🔍 File filter check:', {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -92,17 +112,43 @@ const upload = multer({
 }).single('imageFile');
 
 const gptResize = async (req, res) => {
-  console.log('\n🎨 === GPT-1 RESIZE REQUEST (Fixed multer config) ===');
+  console.log('\n🎨 === GPT-1 RESIZE REQUEST ===');
+  console.log('📊 Request headers:', {
+    'content-type': req.headers['content-type'],
+    'content-length': req.headers['content-length']
+  });
   
-  // Handle file upload first (matching textRemoval.js structure)
-  upload(req, res, async (err) => {
-    if (err) {
-      console.error('❌ File upload error:', err.message);
-      return res.status(400).json({ error: err.message });
+  // Handle file upload with better error handling
+  upload(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      console.error('❌ Multer upload error:', uploadErr.message);
+      console.error('❌ Upload error code:', uploadErr.code);
+      
+      // Handle specific multer errors
+      if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'File too large. Maximum size is 50MB.',
+          errorType: 'FILE_TOO_LARGE'
+        });
+      } else if (uploadErr.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ 
+          error: 'Unexpected file field. Use "imageFile" field name.',
+          errorType: 'UNEXPECTED_FILE_FIELD'
+        });
+      } else if (uploadErr.message.includes('Unexpected end of form')) {
+        return res.status(400).json({ 
+          error: 'Form data was incomplete. Please try uploading again.',
+          errorType: 'INCOMPLETE_FORM_DATA'
+        });
+      } else {
+        return res.status(400).json({ 
+          error: uploadErr.message,
+          errorType: 'UPLOAD_ERROR'
+        });
+      }
     }
 
     try {
-
       const imageFile = req.file;
 
       if (!imageFile) {
@@ -141,8 +187,19 @@ const gptResize = async (req, res) => {
       console.log('📊 Request details:', {
         fileName: imageFile.originalname,
         fileSize: imageFile.size,
-        mimeType: imageFile.mimetype
+        mimeType: imageFile.mimetype,
+        bufferLength: imageFile.buffer ? imageFile.buffer.length : 0
       });
+
+      // Validate file buffer
+      if (!imageFile.buffer || imageFile.buffer.length === 0) {
+        console.error('❌ Invalid file buffer');
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid file buffer received',
+          errorType: 'INVALID_BUFFER'
+        });
+      }
 
       // Compress image if needed
       let compressedBuffer;
@@ -157,17 +214,40 @@ const gptResize = async (req, res) => {
         });
       }
 
+      // Validate compressed buffer
+      if (!compressedBuffer || compressedBuffer.length === 0) {
+        console.error('❌ Compression resulted in empty buffer');
+        return res.status(400).json({
+          success: false,
+          error: 'Image compression resulted in empty buffer',
+          errorType: 'COMPRESSION_EMPTY_RESULT'
+        });
+      }
+
       // Convert compressed image to base64
       const base64Image = compressedBuffer.toString('base64');
       const imageDataUrl = `data:${imageFile.mimetype};base64,${base64Image}`;
 
+      // Validate base64 conversion
+      if (!base64Image || base64Image.length === 0) {
+        console.error('❌ Base64 conversion failed');
+        return res.status(400).json({
+          success: false,
+          error: 'Base64 conversion failed',
+          errorType: 'BASE64_CONVERSION_ERROR'
+        });
+      }
+
+      console.log('✅ Image successfully processed and converted to base64');
+      console.log('📊 Base64 size:', Math.round(base64Image.length / 1024) + 'KB');
+
       // Create a simple prompt for resizing to 3:2 landscape
       const resizePrompt = `Resize this image to 3:2 landscape format. Keep all elements visible and readable.`;
 
-              console.log('🎯 Processing image for intelligent 3:2 resize...');
-        console.log('📝 Using specialized resize prompt');
+      console.log('🎯 Processing image for intelligent 3:2 resize...');
+      console.log('📝 Using specialized resize prompt');
 
-        // Process with Replicate GPT-1
+      // Process with Replicate GPT-1
       const inputParams = {
         prompt: resizePrompt,
         input_images: [imageDataUrl],
@@ -181,7 +261,7 @@ const gptResize = async (req, res) => {
         output_compression: 90
       };
 
-              console.log('🎨 Processing with Replicate GPT-1...');
+      console.log('🎨 Processing with Replicate GPT-1...');
       console.log('🔧 Input parameters:', Object.keys(inputParams));
       console.log('🔧 Checking format compatibility:');
       console.log('  - prompt:', inputParams.prompt.substring(0, 50) + '...');
@@ -249,14 +329,52 @@ const gptResize = async (req, res) => {
         console.log('🖼️ Final image URL type:', typeof urlString);
         console.log('🖼️ Generated 3:2 image URL:', urlString.length > 100 ? urlString.substring(0, 100) + '...' : urlString);
 
-        // Return the resized image
+        // IMPORTANT FIX: Convert the Replicate URL to base64 data URL
+        // This prevents PhotoRoom from having to download the URL (which causes 400 errors)
+        console.log('\n🔄 === CONVERTING REPLICATE URL TO BASE64 ===');
+        console.log('📥 Downloading image from Replicate URL...');
+        
+        let finalImageUrl;
+        try {
+          // Download the image from Replicate
+          const imageResponse = await axios({
+            method: 'GET',
+            url: urlString,
+            responseType: 'arraybuffer',
+            timeout: 30000 // 30 second timeout
+          });
+
+          if (imageResponse.status !== 200) {
+            console.error('❌ Failed to download from Replicate:', imageResponse.status);
+            throw new Error(`Failed to download from Replicate: ${imageResponse.status}`);
+          }
+
+          const imageBuffer = Buffer.from(imageResponse.data);
+          console.log('✅ Image downloaded from Replicate');
+          console.log('📊 Image size:', Math.round(imageBuffer.length / 1024) + 'KB');
+
+          // Convert to base64 data URL
+          const base64Image = imageBuffer.toString('base64');
+          finalImageUrl = `data:image/png;base64,${base64Image}`;
+          
+          console.log('✅ Converted to base64 data URL');
+          console.log('📊 Base64 size:', Math.round(base64Image.length / 1024) + 'KB');
+
+        } catch (downloadError) {
+          console.error('❌ Failed to download/convert Replicate image:', downloadError.message);
+          console.error('🔄 Falling back to original URL...');
+          finalImageUrl = urlString; // Fallback to original URL
+        }
+
+        // Return the resized image (as base64 data URL when possible)
         res.json({
           success: true,
-          imageUrl: urlString,
+          imageUrl: finalImageUrl,
           metadata: {
             originalFileName: imageFile.originalname,
             targetRatio: '3:2',
             method: 'gpt_vision_intelligent_resize',
+            urlType: finalImageUrl.startsWith('data:') ? 'base64_data_url' : 'external_url',
             timestamp: new Date().toISOString()
           }
         });
@@ -272,6 +390,7 @@ const gptResize = async (req, res) => {
       console.error('\n💥 === FATAL ERROR IN GPT RESIZE HANDLER ===');
       console.error('Error type:', error.constructor?.name);
       console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       console.error('=== END FATAL ERROR ===\n');
 
       return res.status(500).json({

@@ -124,21 +124,54 @@ async function handler(req, res) {
 
     // Download the image from URL
     console.log('\n📥 Downloading image from URL...');
-    const imageResponse = await axios({
-      method: 'GET',
-      url: imageUrl,
-      responseType: 'arraybuffer'
-    });
+    
+    let imageBuffer;
+    
+    // Handle base64 data URLs differently from external URLs
+    if (imageUrl.startsWith('data:')) {
+      console.log('🔍 Detected base64 data URL, converting directly...');
+      
+      try {
+        // Extract base64 data from data URL
+        const base64Data = imageUrl.split(',')[1];
+        if (!base64Data) {
+          throw new Error('Invalid base64 data URL format');
+        }
+        
+        imageBuffer = Buffer.from(base64Data, 'base64');
+        console.log('✅ Base64 data URL converted to buffer');
+        console.log('📊 Image size:', Math.round(imageBuffer.length / 1024) + 'KB');
+        
+      } catch (base64Error) {
+        console.error('❌ Failed to convert base64 data URL:', base64Error.message);
+        return res.status(400).json({ error: 'Invalid base64 data URL format' });
+      }
+      
+    } else {
+      console.log('🔍 Detected external URL, downloading...');
+      
+      try {
+        const imageResponse = await axios({
+          method: 'GET',
+          url: imageUrl,
+          responseType: 'arraybuffer',
+          timeout: 30000 // 30 second timeout
+        });
 
-    if (imageResponse.status !== 200) {
-      console.error('❌ Failed to download image:', imageResponse.status);
-      return res.status(400).json({ error: 'Failed to download image from URL' });
+        if (imageResponse.status !== 200) {
+          console.error('❌ Failed to download image:', imageResponse.status);
+          return res.status(400).json({ error: 'Failed to download image from URL' });
+        }
+
+        imageBuffer = Buffer.from(imageResponse.data);
+        console.log('✅ External image downloaded successfully');
+        console.log('📊 Image size:', Math.round(imageBuffer.length / 1024) + 'KB');
+        
+      } catch (downloadError) {
+        console.error('❌ Failed to download external image:', downloadError.message);
+        return res.status(400).json({ error: 'Failed to download image from URL: ' + downloadError.message });
+      }
     }
-
-    console.log('✅ Image downloaded successfully');
-
-    // Convert to buffer (no compression - test with original image)
-    const imageBuffer = Buffer.from(imageResponse.data);
 
     // Prepare FormData for PhotoRoom API
     const formData = new FormData();
