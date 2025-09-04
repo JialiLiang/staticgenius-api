@@ -143,7 +143,7 @@ async function handler(req, res) {
       replicateTokenPrefix: REPLICATE_API_TOKEN?.substring(0, 8) + '...' || 'NOT_SET',
       openaiKeyPrefix: OPENAI_API_KEY?.substring(0, 8) + '...' || 'NOT_SET',
       geminiKeyPrefix: GEMINI_API_KEY?.substring(0, 8) + '...' || 'NOT_SET',
-      availableModels: ['gpt-4', 'nano-banana'],
+      availableModels: ['gpt-image-1', 'nano-banana'],
       message: 'Environment check - use POST to generate images with model selection (JS VERSION)'
     };
     console.log('Environment check via GET:', envCheck);
@@ -157,7 +157,7 @@ async function handler(req, res) {
 
   try {
 
-    const { prompt, aspectRatio, language = 'English', numOutputs, model = 'gpt-4' } = req.body;
+    const { prompt, aspectRatio, language = 'English', numOutputs, model = 'gpt-image-1' } = req.body;
 
     if (!prompt) {
       console.error('❌ Prompt is required');
