@@ -36,6 +36,8 @@ async function generateImageWithGPT(replicate, prompt, aspectRatio, language, nu
 // Helper function to generate image with Google Gemini (Nano Banana)
 async function generateImageWithGemini(prompt, aspectRatio, language, numOutputs, geminiApiKey) {
   console.log('\n🍌 Attempting Gemini (Nano Banana) image generation...');
+  console.log('⚠️ Note: Nano Banana generates images at fixed 1632x640 resolution (2.55:1 ratio)');
+  console.log('📐 Requested aspect ratio:', aspectRatio, '(will be ignored by Gemini)');
   
   // Add language instruction to prompt if not English
   let enhancedPrompt = prompt;
@@ -65,15 +67,27 @@ async function generateImageWithGemini(prompt, aspectRatio, language, numOutputs
         contents: enhancedPrompt,
       });
 
+      console.log(`📊 Gemini response for image ${i + 1} - candidates:`, response.candidates?.length || 0);
+      if (response.candidates && response.candidates[0]) {
+        console.log(`📊 Parts in response:`, response.candidates[0].content?.parts?.length || 0);
+      }
+
       // Extract image data from response
-      for (const part of response.candidates[0].content.parts) {
+      if (!response.candidates || !response.candidates[0] || !response.candidates[0].content || !response.candidates[0].content.parts) {
+        console.error(`❌ Invalid response structure for image ${i + 1}`);
+        continue;
+      }
+
+      for (const [partIndex, part] of response.candidates[0].content.parts.entries()) {
+        console.log(`📊 Part ${partIndex}: hasText=${!!part.text}, hasInlineData=${!!part.inlineData}`);
         if (part.inlineData) {
-          // Convert base64 data to a data URL for consistency with GPT output
+          // The data is already base64 encoded, just create the data URL
           const imageData = part.inlineData.data;
           const mimeType = part.inlineData.mimeType || 'image/png';
           const dataUrl = `data:${mimeType};base64,${imageData}`;
           images.push(dataUrl);
-          console.log(`✅ Gemini image ${i + 1} generated successfully`);
+          console.log(`✅ Gemini image ${i + 1} generated successfully - size: ${imageData.length} chars`);
+          console.log(`🖼️ Data URL preview: ${dataUrl.substring(0, 100)}...`);
           break; // Only take the first image from each generation
         }
       }
@@ -136,15 +150,6 @@ async function handler(req, res) {
   }
 
   try {
-    if (!REPLICATE_API_TOKEN) {
-      console.error('❌ REPLICATE_API_TOKEN is not set');
-      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('REPLICATE')));
-      return res.status(500).json({ 
-        error: 'REPLICATE_API_TOKEN is not configured',
-        timestamp: new Date().toISOString(),
-        env_check: 'failed'
-      });
-    }
 
     const { prompt, aspectRatio, language = 'English', numOutputs, model = 'gpt-4' } = req.body;
 
@@ -220,14 +225,26 @@ async function handler(req, res) {
     console.log('📊 Is backup model:', isBackup);
     console.log('📊 Raw output type:', typeof output);
     console.log('📊 Output is array:', Array.isArray(output));
+    console.log('📊 Output structure preview:', JSON.stringify(output, null, 2).substring(0, 500) + '...');
 
-    // Handle the GPT output
+    // Handle the output (both GPT and Gemini)
     const images = [];
     
     if (output && typeof output === 'object') {
-      console.log('🔍 Processing GPT output...');
+      console.log('🔍 Processing output...');
+      console.log('📊 Output keys:', Object.keys(output));
       
       for (const [index, imageData] of Object.entries(output)) {
+        console.log(`📊 Processing image ${index}:`, typeof imageData, imageData?.toString?.()?.substring(0, 50) + '...');
+        
+        console.log(`🔍 Image ${index} detailed check:`, {
+          hasImageData: !!imageData,
+          type: typeof imageData,
+          isObject: typeof imageData === 'object',
+          hasUrlProperty: imageData && typeof imageData === 'object' && 'url' in imageData,
+          urlValue: imageData && typeof imageData === 'object' ? imageData.url : 'N/A'
+        });
+        
         if (imageData && typeof imageData === 'object' && imageData.url) {
           const urlValue = imageData.url;
           // Check if url is a function that needs to be called
@@ -247,10 +264,10 @@ async function handler(req, res) {
               console.log(`⚠️ Image ${index} error calling url function:`, urlError.message);
             }
           }
-          // Check if url is already a string
-          else if (typeof urlValue === 'string' && urlValue.startsWith('http')) {
+          // Check if url is already a string (HTTP or data URL)
+          else if (typeof urlValue === 'string' && (urlValue.startsWith('http') || urlValue.startsWith('data:'))) {
             images.push(urlValue);
-            console.log(`✅ Image ${index} extracted URL string: ${urlValue}`);
+            console.log(`✅ Image ${index} extracted URL string: ${urlValue.substring(0, 50)}...`);
           }
           // Check if url is a URL object with href property
           else if (urlValue && typeof urlValue === 'object' && urlValue.href) {
@@ -260,11 +277,15 @@ async function handler(req, res) {
           else {
             console.log(`⚠️ Image ${index} url property is not a string or function:`, typeof urlValue, urlValue);
           }
-        } else if (typeof imageData === 'string' && imageData.startsWith('http')) {
+        } else if (typeof imageData === 'string' && (imageData.startsWith('http') || imageData.startsWith('data:'))) {
           images.push(imageData);
-          console.log(`✅ Image ${index} is direct URL: ${imageData}`);
+          console.log(`✅ Image ${index} is direct URL/data: ${imageData.substring(0, 50)}...`);
+        } else if (typeof imageData === 'string') {
+          // For Gemini, imageData might be a data URL directly
+          images.push(imageData);
+          console.log(`✅ Image ${index} processed as string: ${imageData.substring(0, 50)}...`);
         } else {
-          console.log(`⚠️ Image ${index} unknown format:`, typeof imageData);
+          console.log(`⚠️ Image ${index} unknown format:`, typeof imageData, imageData?.toString?.()?.substring(0, 100));
         }
       }
     }

@@ -1,0 +1,52 @@
+StaticGenius API Keys Backup
+==============================
+保存时间: 2025-09-04T16:36:00.000Z
+
+有效的API Keys:
+---------------
+
+主要API Key:
+Key: sg_76f354e9a082c20702b16e5465d89d86
+名称: Test Key
+等级: free
+限制: 10/分钟, 100/小时, 1000/天
+创建时间: 2025-09-04T16:35:21.866Z
+最后验证: 2025-09-04T16:35:58.768Z (✅ 成功生成图像)
+状态: ✅ 验证可用
+
+备用API Key:
+Key: sg_6fb24c606f2038c12b8df8caaaab966a
+名称: Backup Key for Jiali
+等级: free
+限制: 10/分钟, 100/小时, 1000/天
+创建时间: 2025-09-04T16:37:46.000Z
+最后验证: 2025-09-04T16:37:49.746Z (✅ 成功生成图像)
+状态: ✅ 验证可用
+
+使用方法:
+--------
+Authorization: Bearer sg_76f354e9a082c20702b16e5465d89d86
+
+API端点:
+--------
+基础URL: https://staticgenius-api-production.up.railway.app
+- POST /api/generate - 图像生成
+- POST /api/generate-ad - 广告生成  
+- POST /api/photoroom - PhotoRoom服务
+- POST /api/remove-text - 文本移除
+- POST /api/translate - 图像翻译
+- POST /api/gpt-resize - GPT-4 Vision调整
+
+管理员信息:
+----------
+管理员密码: admin123
+管理端点: /admin
+查看keys: GET /admin?action=list-keys
+创建key: POST /admin?action=create-key
+
+注意事项:
+--------
+1. 这个key在Railway生产环境中是持久的
+2. 服务器重启不会丢失这个key
+3. 建议定期检查key的使用情况
+4. 如需要更高限制，可以创建pro或enterprise级别的key
