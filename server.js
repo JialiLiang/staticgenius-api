@@ -32,6 +32,7 @@ const photoroomHandler = require('./photoroom.js');
 const textRemovalHandler = require('./textRemoval.js');
 const imageTranslationHandler = require('./imageTranslation.js');
 const adminHandler = require('./admin.js');
+const discoveryHandler = require('./discovery.js');
 
 // Import middleware
 const { authenticateApiKey, addRateLimitHeaders } = require('./middleware/auth');
@@ -48,6 +49,9 @@ app.post('/api/remove-text', textRemovalHandler);
 app.post('/api/translate', imageTranslationHandler);
 app.post('/api/gpt-resize', require('./gptResize.js')); // New GPT-4 Vision resize endpoint
 
+// Discovery routes (no authentication required)
+app.get('/discover', discoveryHandler);
+
 // Admin routes (no rate limiting)
 app.all('/admin', adminHandler);
 
@@ -61,7 +65,7 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'StaticGenius API Server',
     version: '1.0.0',
-    endpoints: ['/api/generate', '/api/generate-ad', '/api/photoroom', '/api/remove-text', '/api/translate', '/api/gpt-resize', '/health', '/admin'],
+    endpoints: ['/api/generate', '/api/generate-ad', '/api/photoroom', '/api/remove-text', '/api/translate', '/api/gpt-resize', '/health', '/admin', '/discover'],
     documentation: 'https://github.com/your-repo/StaticGeniusPro/blob/main/API_DOCUMENTATION.md',
     authentication: 'Bearer token required for API endpoints (optional in development)',
     rateLimit: 'Varies by tier: free (10/min), pro (50/min), enterprise (200/min)'
