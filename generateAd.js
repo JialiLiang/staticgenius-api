@@ -225,16 +225,16 @@ Requirements:
 };
 
 const FORMAT_TO_TEMPLATE = {
-  'Standard Template 🔥': 'standard',
-  'Pure Hero Concept 🦸‍♂️': 'pure_hero',
-  'Real-life Post-It Notes': 'post_it',
-  'iMessage Conversation': 'imessage',
-  'Simple Black and White': 'minimal',
-  'iPhone Notes': 'notes',
-  'Us vs. Them Comparison': 'comparison',
-  'Testimonial 💬': 'testimonial',
-  'CRM 💌': 'crm_email',
-  'Comic Story 📚': 'comic'
+  'Standard Template': 'standard',
+  'Pure Hero Concept': 'pure_hero',
+  // 'Real-life Post-It Notes': 'post_it',
+  // 'iMessage Conversation': 'imessage',
+  // 'Simple Black and White': 'minimal',
+  // 'iPhone Notes': 'notes',
+  // 'Us vs. Them Comparison': 'comparison',
+  'Testimonial': 'testimonial',
+  // 'CRM': 'crm_email',
+  'Comic Story': 'comic'
 };
 
 async function handler(req, res) {
@@ -261,6 +261,7 @@ async function handler(req, res) {
       productDescription,
       formats,
       aspectRatio = '1:1',
+      language = 'English',
       numAds = 1,
       features,
       brandColor
@@ -271,6 +272,7 @@ async function handler(req, res) {
       productDescription: productDescription?.substring(0, 100) + '...',
       formats,
       aspectRatio,
+      language,
       numAds,
       features: features?.map(f => ({ name: f.name, description: f.description?.substring(0, 50) + '...' })),
       brandColor
@@ -332,9 +334,11 @@ async function handler(req, res) {
             ? 'https://staticgenius-api-production.up.railway.app'
             : 'http://localhost:3001';
           
+          console.log('🌍 Sending to /api/generate with language:', language);
           const response = await axios.post(`${baseURL}/api/generate`, {
             prompt,
             aspectRatio,
+            language,
             numOutputs: numAds
           });
 

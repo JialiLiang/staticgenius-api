@@ -2,16 +2,16 @@
 
 // Available ad formats from the frontend
 const AD_FORMATS = [
-  'Standard Template 🔥',
-  'CRM 💌',
-  'Pure Hero Concept 🦸‍♂️',
-  'Real-life Post-It Notes',
-  'iMessage Conversation',
-  'Simple Black and White',
-  'iPhone Notes',
-  'Us vs. Them Comparison',
-  'Testimonial 💬',
-  'Comic Story 📚'
+  'Standard Template',
+  // 'CRM',
+  'Pure Hero Concept',
+  // 'Real-life Post-It Notes',
+  // 'iMessage Conversation',
+  // 'Simple Black and White',
+  // 'iPhone Notes',
+  // 'Us vs. Them Comparison',
+  'Testimonial',
+  'Comic Story'
 ];
 
 // Available features from the frontend
