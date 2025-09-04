@@ -36,19 +36,25 @@ async function generateImageWithGPT(replicate, prompt, aspectRatio, language, nu
 // Helper function to generate image with Google Gemini (Nano Banana)
 async function generateImageWithGemini(prompt, aspectRatio, language, numOutputs, geminiApiKey) {
   console.log('\n🍌 Attempting Gemini (Nano Banana) image generation...');
-  console.log('⚠️ Note: Nano Banana generates images at fixed 1632x640 resolution (2.55:1 ratio)');
-  console.log('📐 Requested aspect ratio:', aspectRatio, '(will be ignored by Gemini)');
+  console.log('📐 Requested aspect ratio:', aspectRatio);
   
-  // Add language instruction to prompt if not English
+  // Build enhanced prompt with aspect ratio and language instructions
   let enhancedPrompt = prompt;
+  
+  // Add aspect ratio instruction
+  if (aspectRatio) {
+    console.log('🎯 Adding aspect ratio instruction to prompt:', aspectRatio);
+    enhancedPrompt = `Create an image with ${aspectRatio} aspect ratio. ${enhancedPrompt}`;
+  }
+  
+  // Add language instruction if not English
   console.log('🌍 Language received for Gemini:', language);
   if (language && language !== 'English') {
     console.log('🔄 Enhancing prompt for language:', language);
-    enhancedPrompt = `${prompt}\n\nIMPORTANT: Generate all text content in ${language}. All headlines, subheadlines, call-to-action buttons, and any other text should be in ${language}, not English.`;
-    console.log('🎯 Enhanced prompt preview:', enhancedPrompt.substring(0, 300) + '...');
-  } else {
-    console.log('✅ Using original prompt (English or undefined language)');
+    enhancedPrompt = `${enhancedPrompt}\n\nIMPORTANT: Generate all text content in ${language}. All headlines, subheadlines, call-to-action buttons, and any other text should be in ${language}, not English.`;
   }
+  
+  console.log('🎯 Final enhanced prompt preview:', enhancedPrompt.substring(0, 300) + '...');
 
   const ai = new GoogleGenAI({ apiKey: geminiApiKey });
   
