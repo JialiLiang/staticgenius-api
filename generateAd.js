@@ -221,6 +221,32 @@ Requirements:
 - Show the feature solving a relatable problem
 - Friendly, approachable art style
 - No logos or brand names in visuals`;
+  },
+
+  creative_freedom: (productName, productDescription, featureName, featureDescription) => {
+    return `You are an innovative creative director with unlimited artistic freedom.
+
+Create a completely original and creative advertisement that showcases this product feature in an unexpected, memorable way.
+
+Inputs:
+• Product: ${productName}
+• Feature: ${featureName} — ${featureDescription}
+• Context: ${productDescription}
+
+Creative Guidelines:
+- Think outside the box - surprise and delight
+- No format restrictions - be inventive with layout, style, and concept
+- Could be: artistic, abstract, metaphorical, storytelling, experimental, surreal, minimalist, maximalist, or any other creative direction
+- Express the feature's value through creative visual storytelling
+- Consider unique perspectives, unexpected compositions, or innovative design approaches
+- Let your creativity run wild while keeping the core message clear
+
+Only constraints:
+- Keep the feature benefit understandable
+- No logos required
+- Make it memorable and engaging
+
+Be bold. Be different. Create something that stands out.`;
   }
 };
 
@@ -234,7 +260,8 @@ const FORMAT_TO_TEMPLATE = {
   // 'Us vs. Them Comparison': 'comparison',
   'Testimonial': 'testimonial',
   // 'CRM': 'crm_email',
-  'Comic Story': 'comic'
+  'Comic Story': 'comic',
+  'Creative Freedom': 'creative_freedom'
 };
 
 async function handler(req, res) {

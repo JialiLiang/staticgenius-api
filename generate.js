@@ -71,6 +71,11 @@ async function generateImageWithGemini(prompt, aspectRatio, language, numOutputs
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image-preview",
         contents: enhancedPrompt,
+        generationConfig: {
+          temperature: 1.2,  // Higher temperature for more creative/varied outputs
+          topP: 0.95,        // Controls diversity of token selection
+          topK: 40,          // Limits token candidates for better quality
+        }
       });
 
       console.log(`📊 Gemini response for image ${i + 1} - candidates:`, response.candidates?.length || 0);

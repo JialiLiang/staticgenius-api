@@ -18,52 +18,52 @@ const AD_FORMATS = [
 const FEATURE_OPTIONS = [
   {
     name: "Background Remover",
-    description: "Automatically remove backgrounds from images in one tap, creating clean, professional visuals ideal for product listings, social media, and marketing materials. - Show many options",
+    description: "Automatically remove backgrounds from images in one tap, creating clean, professional visuals ideal for product listings, social media, and marketing materials.",
     isCustom: false
   },
   {
     name: "AI Background",
-    description: "Upload a simple photo — AI removes the background and instantly creates a high-quality, professional scene with cinematic lighting, all while keeping your product untouched. Perfect for ads, catalogs, and online shops.- Show many options",
+    description: "Upload a simple photo — AI removes the background and instantly creates a high-quality, professional scene with cinematic lighting, all while keeping your product untouched. Perfect for ads, catalogs, and online shops.",
     isCustom: false
   },
   {
     name: "AI Object Removal",
-    description: "Remove unwanted objects from your photos.- Show many options",
+    description: "Remove unwanted objects from your photos.",
     isCustom: false
   },
   {
     name: "AI upscale (Cleanup & Enhance)",
-    description: "Use AI to upscale your super-blurred low quality photos to HD and improve the quality.- Show many options",
+    description: "Use AI to upscale your super-blurred low quality photos to HD and improve the quality.",
     isCustom: false
   },
   {
     name: "AI Resize",
-    description: "Quickly resize images to fit various platforms and marketplaces (e.g., Amazon, Etsy, Instagram) without compromising quality — perfect for multichannel sellers.- Show many options",
+    description: "Quickly resize images to fit various platforms and marketplaces (e.g., Amazon, Etsy, Instagram) without compromising quality — perfect for multichannel sellers.",
     isCustom: false
   },
   {
     name: "AI Logo",
-    description: "Create logos instantly with AI — whether it's a friendly name logo for a local real estate brand, a bold diner-style badge for a burger joint, or a cozy handwritten logo for a handmade shop. No design skills needed.- Show many options",
+    description: "Create logos instantly with AI — whether it's a friendly name logo for a local real estate brand, a bold diner-style badge for a burger joint, or a cozy handwritten logo for a handmade shop. No design skills needed.",
     isCustom: false
   },
   {
     name: "AI Virtual Try-On",
-    description: "Display your products (like clothing, shoes, or accessories) on AI-generated models to showcase how they look in real life — no photoshoot needed.- Show many options",
+    description: "Display your products (like clothing, shoes, or accessories) on AI-generated models to showcase how they look in real life — no photoshoot needed.",
     isCustom: false
   },
   {
     name: "Product Staging",
-    description: "Turn your product photos into lifestyle images with AI. Place your items in realistic scenes — sometimes with people using them — to add context and inspire buyers. Objects can be jewelry, mugs, candles, shoes, etc.- Show many options",
+    description: "Turn your product photos into lifestyle images with AI. Place your items in realistic scenes — sometimes with people using them — to add context and inspire buyers. Objects can be jewelry, mugs, candles, shoes, etc.",
     isCustom: false
   },
   {
     name: "AI Product Beautifier",
-    description: "Turn ugly product shots — even quick snaps from your iPhone — into stunning, studio-quality images. Instantly add cinematic lighting, and create high-end professional backgrounds that make your products shine.- Show many options",
+    description: "Turn ugly product shots — even quick snaps from your iPhone — into stunning, studio-quality images. Instantly add cinematic lighting, and create high-end professional backgrounds that make your products shine."
     isCustom: false
   },
   {
     name: "AI IG Story",
-    description: "Turn any photo into a scroll-stopping Instagram Story with AI-powered layouts, backgrounds, and styling — made for creators who move fast.- Show many options",
+    description: "Turn any photo into a scroll-stopping Instagram Story with AI-powered layouts, backgrounds, and styling — made for creators who move fast."
     isCustom: false
   }
 ];
