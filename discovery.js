@@ -58,12 +58,12 @@ const FEATURE_OPTIONS = [
   },
   {
     name: "AI Product Beautifier",
-    description: "Turn ugly product shots — even quick snaps from your iPhone — into stunning, studio-quality images. Instantly add cinematic lighting, and create high-end professional backgrounds that make your products shine."
+    description: "Turn ugly product shots — even quick snaps from your iPhone — into stunning, studio-quality images. Instantly add cinematic lighting, and create high-end professional backgrounds that make your products shine.",
     isCustom: false
   },
   {
     name: "AI IG Story",
-    description: "Turn any photo into a scroll-stopping Instagram Story with AI-powered layouts, backgrounds, and styling — made for creators who move fast."
+    description: "Turn any photo into a scroll-stopping Instagram Story with AI-powered layouts, backgrounds, and styling — made for creators who move fast.",
     isCustom: false
   }
 ];
