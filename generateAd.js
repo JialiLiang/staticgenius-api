@@ -290,6 +290,7 @@ async function handler(req, res) {
       aspectRatio = '1:1',
       language = 'English',
       numAds = 1,
+      model = 'gpt-image-1',
       features,
       brandColor
     } = req.body;
@@ -301,6 +302,7 @@ async function handler(req, res) {
       aspectRatio,
       language,
       numAds,
+      model,
       features: features?.map(f => ({ name: f.name, description: f.description?.substring(0, 50) + '...' })),
       brandColor
     });
@@ -361,12 +363,13 @@ async function handler(req, res) {
             ? 'https://staticgenius-api-production.up.railway.app'
             : 'http://localhost:3001';
           
-          console.log('🌍 Sending to /api/generate with language:', language);
+          console.log('🌍 Sending to /api/generate with language:', language, 'and model:', model);
           const response = await axios.post(`${baseURL}/api/generate`, {
             prompt,
             aspectRatio,
             language,
-            numOutputs: numAds
+            numOutputs: numAds,
+            model
           });
 
           if (response.data.images && Array.isArray(response.data.images)) {
